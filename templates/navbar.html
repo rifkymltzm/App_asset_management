@@ -1,0 +1,31 @@
+<nav class="border-b border-slate-900 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
+    <div class="container mx-auto px-4 max-w-7xl">
+        <div class="flex h-16 items-center justify-between">
+            <!-- Logo / Brand -->
+            <div class="flex items-center space-x-2">
+                <a href="{% url 'dashboard' %}" class="flex items-center space-x-2">
+                    <svg class="h-8 w-8 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.003 9.003 0 1020.945 13H11V3.055z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                    </svg>
+                    <span class="text-xl font-bold text-gradient">Asset Management</span>
+                </a>
+            </div>
+
+            <!-- Navigation Links -->
+            <div class="flex items-center space-x-4">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'dashboard' %}" class="text-sm font-medium text-slate-300 hover:text-white transition duration-150">Dashboard</a>
+                    <div class="h-4 w-[1px] bg-slate-800"></div>
+                    <div class="flex items-center space-x-3">
+                        <span class="text-sm text-slate-400">Halo, <strong class="text-indigo-400 font-semibold">{{ user.username }}</strong></span>
+                        <a href="{% url 'logout' %}" class="rounded-lg bg-slate-900 border border-slate-800 px-3.5 py-1.5 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/20 transition duration-150">Keluar</a>
+                    </div>
+                {% else %}
+                    <a href="{% url 'login' %}" class="text-sm font-semibold text-slate-300 hover:text-white transition duration-150">Masuk</a>
+                    <a href="{% url 'signup' %}" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 transition duration-150">Daftar</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</nav>
