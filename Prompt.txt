@@ -1,0 +1,15 @@
+Tolong buatkan PRD untuk website project aplikasi Manajemen Asset Investasi. Fitur Utama dari aplikasi tersebut adalah mengelola/memantau semua asset yang dimiliki user dan terintegrasi dengan Harga terupdate dari masing-masing instrument investasi tersebut menggunakan API. Buatkan juga system login & sign up untuk user aplikasi tersebut. 
+
+Technology stack yang digunakan : 
+* Django 
+* JavaScript 
+* Tailwind CSS 
+* Postgree SQL 
+
+Deskripsi fitur : 
+User dapat menambah asset yang dimiliki untuk nantinya di integrasikan dengan Harga terupdate dari masing-masing instrument investasi yang dimiliki oleh user. User dapat melihat perkembangan Harga pasar dan melihat P&L dari asset-nya, buatkan juga grafik Harga dari instrument investasi yang ada. 
+
+Catatan : 
+Buatkan model yang mudah dikembangkan dan dikelola oleh developer. Jangan buat terlalu rumit namun tetap standart professional, kedepannya project ini akan dibuat oleh junior programmer / bantuan AI dengan model yang lebih murah. Jadi tolong rancangannya dibuat seefisien mungkin dan mudah dikembangkan, namun tetap mengedepankan sisi professional programmer.
+
+Butkan file PRD ini kedalam format markdown (.md) dengan nama file PRD-App-Asset-Management.md
