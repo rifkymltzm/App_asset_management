@@ -47,3 +47,37 @@ def fetch_historical_prices(ticker, period="1mo"):
     except Exception as e:
         print(f"Error fetching historical data for {ticker}: {e}")
         return []
+
+
+def fetch_instrument_info(ticker):
+    try:
+        yf_ticker = (
+            ticker if ticker.endswith(".JK")
+            else f"{ticker}.JK"
+        )
+
+        stock = yf.Ticker(yf_ticker)
+
+        history = stock.history(period="1d")
+
+        if history.empty:
+            return None
+
+        info = stock.info
+
+        return {
+            "ticker": yf_ticker,
+            "name": (
+                info.get("longName")
+                or info.get("shortName")
+                or ticker
+            ),
+            "instrument_type": "Saham",
+            "current_price": float(
+                history["Close"].iloc[-1]
+            ),
+        }
+
+    except Exception as e:
+        print("Fetch Instrument Error:", e)
+        return None

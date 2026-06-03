@@ -1,106 +1,240 @@
-{% extends 'base.html' %}
-
-{% block title %}{% if form_type == 'edit' %}Edit Aset{% else %}Tambah Aset Baru{% endif %} - Asset Management{% endblock %}
-
-{% block content %}
+{% extends 'base.html' %} {% block title %} {% if form_type == 'edit' %}Edit
+Aset {% else %}Tambah Aset Baru {% endif %} - Asset Management {% endblock %}
+{%block content %}
 <div class="max-w-2xl mx-auto py-8">
-    <div class="mb-6">
-        <a href="{% url 'dashboard' %}" class="inline-flex items-center text-sm text-slate-400 hover:text-white transition duration-150">
-            <svg class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Kembali ke Dashboard
+  <div class="mb-6">
+    <a
+      href="{% url 'dashboard' %}"
+      class="inline-flex items-center text-sm text-slate-400 hover:text-white transition duration-150"
+    >
+      <svg
+        class="h-4 w-4 mr-1.5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M10 19l-7-7m0 0l7-7m-7 7h18"
+        />
+      </svg>
+      Kembali ke Dashboard
+    </a>
+  </div>
+
+  <div class="glass-panel p-8 rounded-2xl shadow-2xl">
+    <h2 class="text-2xl font-bold tracking-tight text-white mb-6">
+      {% if form_type == 'edit' %} Edit Kepemilikan Aset:
+      <span class="text-indigo-400 font-semibold"
+        >{{ asset.instrument.ticker_symbol }}</span
+      >
+      {% else %} Tambah Aset Investasi Baru {% endif %}
+    </h2>
+
+    <form method="POST" class="space-y-6">
+      {% csrf_token %} {% if error_message %}
+      <div
+        class="p-4 rounded-xl text-xs bg-rose-500/10 border border-rose-500/20 text-rose-400"
+      >
+        {{ error_message }}
+      </div>
+      {% endif %}
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Ticker Symbol -->
+        <div>
+          <label
+            for="ticker_symbol"
+            class="block text-sm font-medium text-slate-300"
+            >Ticker / Kode Simbol</label
+          >
+          <div class="mt-1">
+            <input
+              type="text"
+              id="ticker_symbol"
+              name="ticker_symbol"
+              required
+              placeholder="Contoh: BBCA, BBRI, BTC"
+              {%
+              if
+              form_type=""
+              ="edit"
+              %}disabled
+              value="{{ asset.instrument.ticker_symbol }}"
+              {%
+              else
+              %}value="{{ ticker_symbol|default:'' }}"
+              {%
+              endif
+              %}
+              class="block w-full rounded-xl bg-slate-900/60 border border-slate-800 px-4 py-3 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+          </div>
+          {% if form_type != 'edit' %}
+          <p class="mt-1.5 text-xs text-slate-500">
+            Ketik kode saham atau ticker aset. Contoh: BBCA, BBRI, TLKM, BTC
+          </p>
+          {% endif %}
+        </div>
+
+        <!-- Instrument Type -->
+        <div>
+          <label
+            for="instrument_type"
+            class="block text-sm font-medium text-slate-300"
+            >Tipe Instrumen</label
+          >
+          <div class="mt-1">
+            <input
+              type="text"
+              id="instrument_type"
+              name="instrument_type"
+              readonly
+              class="block w-full rounded-xl bg-slate-900/60 border border-slate-800 px-4 py-3 text-slate-200 focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <!-- Instrument Name -->
+        <div class="md:col-span-2">
+          <label for="name" class="block text-sm font-medium text-slate-300"
+            >Nama Lengkap Instrumen</label
+          >
+          <div class="mt-1">
+            <input
+              type="text"
+              id="name"
+              name="name"
+              required
+              readonly
+              {%
+              if
+              form_type=""
+              ="edit"
+              %}disabled
+              value="{{ asset.instrument.name }}"
+              {%
+              else
+              %}value="{{ name|default:'' }}"
+              {%
+              endif
+              %}
+              class="block w-full rounded-xl bg-slate-900/60 border border-slate-800 px-4 py-3 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+          </div>
+        </div>
+
+        <!-- Quantity -->
+        <div>
+          <label
+            id="quantity-label"
+            for="quantity"
+            class="block text-sm font-medium text-slate-300"
+          >
+            Jumlah Lot
+          </label>
+          <div class="mt-1">
+            <input
+              type="number"
+              step="any"
+              id="quantity"
+              name="quantity"
+              required
+              placeholder="Contoh: 10 atau 0.05"
+              value="{% if form_type == 'edit' %}{{ asset.quantity }}{% else %}{{ quantity|default:'' }}{% endif %}"
+              class="block w-full rounded-xl bg-slate-900/60 border border-slate-800 px-4 py-3 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150"
+            />
+            <p id="quantity-helper" class="mt-1.5 text-xs text-slate-500">
+              1 lot = 100 lembar saham
+            </p>
+          </div>
+        </div>
+
+        <!-- Average Buy Price -->
+        <div>
+          <label
+            for="average_buy_price"
+            class="block text-sm font-medium text-slate-300"
+            >Harga Beli Rata-rata</label
+          >
+          <div class="mt-1">
+            <input
+              type="number"
+              step="any"
+              id="average_buy_price"
+              name="average_buy_price"
+              required
+              placeholder="Harga beli rata-rata per unit"
+              value="{% if form_type == 'edit' %}{{ asset.average_buy_price }}{% else %}{{ average_buy_price|default:'' }}{% endif %}"
+              class="block w-full rounded-xl bg-slate-900/60 border border-slate-800 px-4 py-3 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-4 flex justify-end space-x-3">
+        <a
+          href="{% url 'dashboard' %}"
+          class="rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 px-5 py-3 text-sm font-bold text-slate-300 hover:text-white transition duration-150"
+        >
+          Batal
         </a>
-    </div>
+        <button
+          type="submit"
+          class="rounded-xl bg-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150"
+        >
+          {% if form_type == 'edit' %} Simpan Perubahan {% else %} Simpan Aset
+          {% endif %}
+        </button>
+      </div>
+      <script>
+        document.querySelector("form").addEventListener("submit", function () {
+          console.log("SUBMIT NAME:", document.getElementById("name").value);
 
-    <div class="glass-panel p-8 rounded-2xl shadow-2xl">
-        <h2 class="text-2xl font-bold tracking-tight text-white mb-6">
-            {% if form_type == 'edit' %}
-                Edit Kepemilikan Aset: <span class="text-indigo-400 font-semibold">{{ asset.instrument.ticker_symbol }}</span>
-            {% else %}
-                Tambah Aset Investasi Baru
-            {% endif %}
-        </h2>
-
-        <form method="POST" class="space-y-6">
-            {% csrf_token %}
-
-            {% if error_message %}
-                <div class="p-4 rounded-xl text-xs bg-rose-500/10 border border-rose-500/20 text-rose-400">
-                    {{ error_message }}
-                </div>
-            {% endif %}
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Ticker Symbol -->
-                <div>
-                    <label for="ticker_symbol" class="block text-sm font-medium text-slate-300">Ticker / Kode Simbol</label>
-                    <div class="mt-1">
-                        <input type="text" id="ticker_symbol" name="ticker_symbol" required placeholder="Contoh: BBCA.JK atau BTC-USD"
-                            {% if form_type == 'edit' %}disabled value="{{ asset.instrument.ticker_symbol }}"{% else %}value="{{ ticker_symbol|default:'' }}"{% endif %}
-                            class="block w-full rounded-xl bg-slate-900/60 border border-slate-800 px-4 py-3 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed">
-                    </div>
-                    {% if form_type != 'edit' %}
-                        <p class="mt-1.5 text-xs text-slate-500">Gunakan ekstensi .JK untuk saham Indonesia (misal: BBCA.JK, TLKM.JK).</p>
-                    {% endif %}
-                </div>
-
-                <!-- Instrument Type -->
-                <div>
-                    <label for="instrument_type" class="block text-sm font-medium text-slate-300">Tipe Instrumen</label>
-                    <div class="mt-1">
-                        <select id="instrument_type" name="instrument_type" required {% if form_type == 'edit' %}disabled{% endif %}
-                            class="block w-full rounded-xl bg-slate-900/60 border border-slate-800 px-4 py-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed">
-                            <option value="Saham" {% if asset.instrument.instrument_type == 'Saham' or instrument_type == 'Saham' %}selected{% endif %}>Saham</option>
-                            <option value="Crypto" {% if asset.instrument.instrument_type == 'Crypto' or instrument_type == 'Crypto' %}selected{% endif %}>Crypto</option>
-                            <option value="Reksadana" {% if asset.instrument.instrument_type == 'Reksadana' or instrument_type == 'Reksadana' %}selected{% endif %}>Reksadana</option>
-                            <option value="Lainnya" {% if asset.instrument.instrument_type == 'Lainnya' or instrument_type == 'Lainnya' %}selected{% endif %}>Lainnya</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Instrument Name -->
-                <div class="md:col-span-2">
-                    <label for="name" class="block text-sm font-medium text-slate-300">Nama Lengkap Instrumen</label>
-                    <div class="mt-1">
-                        <input type="text" id="name" name="name" required placeholder="Contoh: Bank Central Asia Tbk atau Bitcoin"
-                            {% if form_type == 'edit' %}disabled value="{{ asset.instrument.name }}"{% else %}value="{{ name|default:'' }}"{% endif %}
-                            class="block w-full rounded-xl bg-slate-900/60 border border-slate-800 px-4 py-3 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed">
-                    </div>
-                </div>
-
-                <!-- Quantity -->
-                <div>
-                    <label for="quantity" class="block text-sm font-medium text-slate-300">Jumlah Kepemilikan (Lot / Unit / Koin)</label>
-                    <div class="mt-1">
-                        <input type="number" step="any" id="quantity" name="quantity" required placeholder="Contoh: 10 atau 0.05"
-                            value="{% if form_type == 'edit' %}{{ asset.quantity }}{% else %}{{ quantity|default:'' }}{% endif %}"
-                            class="block w-full rounded-xl bg-slate-900/60 border border-slate-800 px-4 py-3 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150">
-                    </div>
-                </div>
-
-                <!-- Average Buy Price -->
-                <div>
-                    <label for="average_buy_price" class="block text-sm font-medium text-slate-300">Harga Beli Rata-rata</label>
-                    <div class="mt-1">
-                        <input type="number" step="any" id="average_buy_price" name="average_buy_price" required placeholder="Harga beli rata-rata per unit"
-                            value="{% if form_type == 'edit' %}{{ asset.average_buy_price }}{% else %}{{ average_buy_price|default:'' }}{% endif %}"
-                            class="block w-full rounded-xl bg-slate-900/60 border border-slate-800 px-4 py-3 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150">
-                    </div>
-                </div>
-            </div>
-
-            <div class="pt-4 flex justify-end space-x-3">
-                <a href="{% url 'dashboard' %}"
-                    class="rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 px-5 py-3 text-sm font-bold text-slate-300 hover:text-white transition duration-150">
-                    Batal
-                </a>
-                <button type="submit"
-                    class="rounded-xl bg-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150">
-                    {% if form_type == 'edit' %}Simpan Perubahan{% else %}Simpan Aset{% endif %}
-                </button>
-            </div>
-        </form>
-    </div>
+          console.log(
+            "SUBMIT TYPE:",
+            document.getElementById("instrument_type").value,
+          );
+        });
+      </script>
+    </form>
+  </div>
 </div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const tickerInput = document.getElementById("ticker_symbol");
+
+    const nameInput = document.getElementById("name");
+
+    const typeInput = document.getElementById("instrument_type");
+
+    tickerInput.addEventListener("blur", async () => {
+      const ticker = tickerInput.value.trim();
+
+      if (!ticker) return;
+
+      try {
+        const cleanTicker = ticker.replace(".JK", "");
+
+        const response = await fetch(`/api/instrument/${cleanTicker}/`);
+
+        const data = await response.json();
+
+        if (data.success) {
+          nameInput.value = data.name;
+
+          typeInput.value = data.instrument_type;
+
+          console.log("Instrument Type:", typeInput.value);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    });
+  });
+</script>
+
 {% endblock %}

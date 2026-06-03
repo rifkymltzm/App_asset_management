@@ -1,5 +1,6 @@
-{% extends 'base.html' %} {% block title %}Dashboard Portofolio - Asset
-Management{% endblock %} {% block content %}
+{% extends 'base.html' %} {% load currency %} {% block title %} Dashboard
+Portofolio - Asset Management {% endblock %} {% block content %}
+
 <div class="space-y-8">
   <!-- Header Dashboard -->
   <div
@@ -45,7 +46,7 @@ Management{% endblock %} {% block content %}
         >Total Nilai Portofolio</span
       >
       <span class="text-2xl font-extrabold text-white mt-2"
-        >Rp {{ total_value|floatformat:2 }}</span
+        >{{total_value|rupiah}}</span
       >
       <span class="text-xs text-indigo-400 mt-1"
         >Berdasarkan harga pasar terupdate</span
@@ -61,7 +62,7 @@ Management{% endblock %} {% block content %}
         >Total Modal Diinvestasikan</span
       >
       <span class="text-2xl font-extrabold text-white mt-2"
-        >Rp {{ total_cost|floatformat:2 }}</span
+        >{{total_cost|rupiah}}</span
       >
       <span class="text-xs text-slate-500 mt-1"
         >Total harga beli seluruh aset</span
@@ -79,7 +80,7 @@ Management{% endblock %} {% block content %}
       <span
         class="text-2xl font-extrabold {% if total_pnl >= 0 %}text-emerald-400{% else %}text-rose-400{% endif %} mt-2"
       >
-        {% if total_pnl >= 0 %}+{% endif %}Rp {{ total_pnl|floatformat:2 }}
+        {% if total_pnl >= 0 %}+{% endif %} {{total_pnl|rupiah}}
       </span>
       <span class="text-xs text-slate-500 mt-1"
         >Nilai keuntungan/kerugian bersih</span
@@ -118,13 +119,7 @@ Management{% endblock %} {% block content %}
       <div
         class="flex-grow flex items-center justify-center min-h-[220px] bg-slate-950/20 rounded-xl border border-slate-900 border-dashed"
       >
-        <span
-          class="text-sm text-slate-500 text-center px-4"
-          id="allocation-placeholder"
-        >
-          Grafik alokasi aset akan muncul secara interaktif setelah data
-          historis dimuat.
-        </span>
+        <div id="allocation-chart" class="w-full h-[250px]"></div>
       </div>
     </div>
 
@@ -138,13 +133,7 @@ Management{% endblock %} {% block content %}
       <div
         class="flex-grow flex items-center justify-center min-h-[220px] bg-slate-950/20 rounded-xl border border-slate-900 border-dashed"
       >
-        <span
-          class="text-sm text-slate-500 text-center px-4"
-          id="history-placeholder"
-        >
-          Klik ikon grafik di tabel aset di bawah untuk menampilkan riwayat
-          pergerakan harga instrumen tersebut.
-        </span>
+        <div id="history-chart" class="w-full h-[300px]"></div>
       </div>
     </div>
   </div>
@@ -157,7 +146,7 @@ Management{% endblock %} {% block content %}
       <h3 class="text-lg font-bold text-white">Detail Kepemilikan Aset</h3>
       <span
         class="text-xs bg-slate-900 text-slate-400 px-3 py-1 rounded-full border border-slate-800"
-        >{{ user_assets|length }} Aset</span
+        >{{user_assets|length}} Aset</span
       >
     </div>
 
@@ -217,7 +206,7 @@ Management{% endblock %} {% block content %}
           {% for asset in user_assets %}
           <tr class="hover:bg-slate-900/20 transition duration-150 group">
             <td class="px-6 py-4 font-bold text-indigo-400">
-              {{ asset.instrument.ticker_symbol }}
+              {{ asset.instrument.display_ticker }}
             </td>
             <td class="px-6 py-4 text-slate-200">
               {{ asset.instrument.name }}
@@ -230,23 +219,23 @@ Management{% endblock %} {% block content %}
               </span>
             </td>
             <td class="px-6 py-4 text-right text-slate-300 font-mono">
-              {{ asset.quantity }}
+              {{ asset.display_quantity }}
             </td>
             <td class="px-6 py-4 text-right text-slate-300 font-mono">
-              Rp {{ asset.average_buy_price|floatformat:2 }}
+              {{ asset.average_buy_price|rupiah}}
             </td>
             <td class="px-6 py-4 text-right text-slate-300 font-mono">
-              Rp {{ asset.instrument.current_price|floatformat:2 }}
+              {{ asset.instrument.current_price|rupiah}}
             </td>
             <td class="px-6 py-4 text-right font-semibold text-white font-mono">
-              Rp {{ asset.current_value|floatformat:2 }}
+              {{ asset.current_value|rupiah}}
             </td>
             <td class="px-6 py-4 text-right font-mono">
               <div
                 class="{% if asset.profit_loss >= 0 %}text-emerald-400{% else %}text-rose-400{% endif %} font-semibold"
               >
-                {% if asset.profit_loss >= 0 %} + {% endif %} Rp
-                {{asset.profit_loss|floatformat:2}}
+                {% if asset.profit_loss >= 0 %} + {% endif %}
+                {{asset.profit_loss|rupiah}}
               </div>
               <div
                 class="text-xs {% if asset.profit_loss >= 0 %}text-emerald-500{% else %}text-rose-500{% endif %}"
@@ -362,16 +351,94 @@ Management{% endblock %} {% block content %}
   </div>
 </div>
 {% endblock %} {% block extra_js %}
-<!-- Script placeholder untuk loadChart agar tidak error saat diklik -->
+{{allocation_data|json_script:"allocation-data"}}
 <script>
-  function loadChart(symbol, name) {
-    alert(
-      "Fase 4: Pemuatan data grafik historis untuk instrumen " +
-        name +
-        " (" +
-        symbol +
-        ") sedang diproses pada milestone berikutnya!",
+  document.addEventListener("DOMContentLoaded", () => {
+    const allocationData = JSON.parse(
+      document.getElementById("allocation-data").textContent,
     );
+
+    if (!allocationData.length) return;
+
+    const labels = allocationData.map((item) => item.symbol);
+
+    const values = allocationData.map((item) => item.value);
+
+    const options = {
+      chart: {
+        type: "donut",
+        height: 250,
+      },
+      labels: labels,
+      series: values,
+      legend: {
+        position: "bottom",
+      },
+    };
+
+    const chart = new ApexCharts(
+      document.querySelector("#allocation-chart"),
+      options,
+    );
+
+    chart.render();
+  });
+
+  let chartInstance = null;
+
+  async function loadChart(symbol, name) {
+    try {
+      const response = await fetch(`/api/chart-data/${symbol}/`);
+
+      if (!response.ok) {
+        throw new Error("Gagal mengambil data chart");
+      }
+
+      const data = await response.json();
+
+      document.getElementById("chart-title").textContent =
+        `Grafik Harga ${name} (${symbol})`;
+
+      const chartContainer = document.getElementById("history-chart");
+
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+
+      const options = {
+        chart: {
+          type: "line",
+          height: 300,
+          toolbar: {
+            show: true,
+          },
+        },
+        series: [
+          {
+            name: symbol,
+            data: data.prices,
+          },
+        ],
+        xaxis: {
+          categories: data.dates,
+        },
+        stroke: {
+          curve: "smooth",
+        },
+        tooltip: {
+          shared: true,
+        },
+      };
+
+      chartInstance = new ApexCharts(chartContainer, options);
+
+      chartInstance.render();
+    } catch (error) {
+      console.error(error);
+
+      document.getElementById("history-chart").innerHTML =
+        "<p class='text-red-400'>Gagal memuat data grafik.</p>";
+    }
   }
 </script>
 {% endblock %}

@@ -22,6 +22,13 @@ class InvestmentInstrument(models.Model):
         verbose_name = "Instrumen Investasi"
         verbose_name_plural = "Instrumen Investasi"
 
+    @property
+    def display_ticker(self):
+        if self.ticker_symbol.endswith(".JK"):
+            return self.ticker_symbol[:-3]
+
+        return self.ticker_symbol
+
 
 class UserAsset(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="assets", verbose_name="Pengguna")
@@ -30,6 +37,13 @@ class UserAsset(models.Model):
     average_buy_price = models.DecimalField(max_digits=20, decimal_places=4, verbose_name="Harga Beli Rata-rata")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Tanggal Dibuat")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Tanggal Diperbarui")
+
+    @property
+    def display_quantity(self):
+        if self.instrument.instrument_type == "Saham":
+            return f"{int(self.quantity / 100)} Lot"
+
+        return f"{self.quantity.normalize()}"
 
     @property
     def total_cost(self):
@@ -49,6 +63,13 @@ class UserAsset(models.Model):
         if cost == 0:
             return 0
         return (self.profit_loss / cost) * 100
+
+    @property
+    def display_quantity(self):
+        if self.instrument.instrument_type == "Saham":
+            return f"{int(self.quantity / 100)} Lot"
+
+        return f"{self.quantity.normalize()}"
 
     def __str__(self):
         return f"{self.user.username} - {self.instrument.ticker_symbol} ({self.quantity})"

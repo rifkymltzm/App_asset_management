@@ -1,14 +1,47 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django import forms
 from django.utils import timezone
 from datetime import timedelta
 from .models import InvestmentInstrument, UserAsset
-from .services import fetch_current_price, fetch_historical_prices
+from .services import fetch_current_price, fetch_historical_prices, fetch_instrument_info
 from decimal import Decimal
 from django.http import JsonResponse
+
+@login_required
+def instrument_lookup_api(request, ticker):
+
+    instrument = InvestmentInstrument.objects.filter(
+        ticker_symbol__istartswith=ticker.upper()
+    ).first()
+
+    if not instrument:
+
+        data = fetch_instrument_info(ticker)
+
+        if not data:
+            return JsonResponse({
+                "success": False,
+                "message": "Instrumen tidak ditemukan"
+            }, status=404)
+
+        instrument = InvestmentInstrument.objects.create(
+            ticker_symbol=data["ticker"],
+            name=data["name"],
+            instrument_type=data["instrument_type"],
+            current_price=data["current_price"]
+        )
+
+    return JsonResponse({
+        "success": True,
+        "ticker": instrument.ticker_symbol,
+        "name": instrument.name,
+        "instrument_type": instrument.instrument_type,
+        "current_price": float(instrument.current_price),
+    })
 
 class SignUpForm(forms.Form):
     username = forms.CharField(max_length=150, label='Username')
@@ -109,6 +142,15 @@ def dashboard_view(request):
     total_pnl_percentage = Decimal(0.0)
     if total_cost > 0:
         total_pnl_percentage = (total_pnl / total_cost) * 100
+
+    # Hitung data alokasi untuk grafik
+    allocation_data = []
+
+    for asset in user_assets:
+        allocation_data.append({
+            "symbol": asset.instrument.ticker_symbol,
+            "value": float(asset.current_value)
+        })
         
     context = {
         'user_assets': user_assets,
@@ -116,6 +158,7 @@ def dashboard_view(request):
         'total_cost': total_cost,
         'total_pnl': total_pnl,
         'total_pnl_percentage': total_pnl_percentage,
+        'allocation_data': allocation_data,
     }
     return render(request, 'dashboard.html', context)
 
@@ -124,32 +167,62 @@ def add_asset_view(request):
         return redirect('login')
     
     if request.method == 'POST':
-        ticker_symbol = request.POST.get('ticker_symbol').strip().upper()
-        name = request.POST.get('name').strip()
-        instrument_type = request.POST.get('instrument_type')
+
+        ticker_symbol = request.POST.get(
+            'ticker_symbol'
+        ).strip().upper()
+
         quantity_str = request.POST.get('quantity')
-        average_buy_price_str = request.POST.get('average_buy_price')
-        
+
+        average_buy_price_str = request.POST.get(
+            'average_buy_price'
+        )
+
+        instrument = InvestmentInstrument.objects.filter(
+            ticker_symbol__istartswith=ticker_symbol.upper()
+        ).first()
+
+        if not instrument:
+
+            data = fetch_instrument_info(ticker_symbol)
+
+            if not data:
+                return render(
+                    request,
+                    'asset_form.html',
+                    {
+                        'form_type': 'add',
+                        'error_message': 'Instrumen tidak ditemukan'
+                    }
+                )
+
+            instrument = InvestmentInstrument.objects.create(
+                ticker_symbol=data["ticker"],
+                name=data["name"],
+                instrument_type=data["instrument_type"],
+                current_price=data["current_price"]
+            )
+
+        # gunakan data dari database
+        ticker_symbol = instrument.ticker_symbol
+        name = instrument.name
+        instrument_type = instrument.instrument_type
+
         try:
             quantity = Decimal(quantity_str)
             average_buy_price = Decimal(average_buy_price_str)
-            
+
+            if instrument_type == "Saham":
+                quantity *= 100
+
             if quantity <= 0 or average_buy_price <= 0:
-                raise ValueError("Jumlah dan harga beli harus lebih dari 0.")
+                raise ValueError(
+                    "Jumlah dan harga beli harus lebih dari 0."
+                )
             
             # Pancing harga live saat pendaftaran pertama kali
             live_price = fetch_current_price(ticker_symbol)
             default_price = Decimal(live_price) if live_price is not None else average_buy_price
-            
-            # Dapatkan atau buat InvestmentInstrument master data
-            instrument, created = InvestmentInstrument.objects.get_or_create(
-                ticker_symbol=ticker_symbol,
-                defaults={
-                    'name': name,
-                    'instrument_type': instrument_type,
-                    'current_price': default_price,
-                }
-            )
             
             # Jika instrumen sudah ada, kita perbarui datanya
             if not created:
