@@ -10,38 +10,51 @@ from .models import InvestmentInstrument, UserAsset
 from .services import fetch_current_price, fetch_historical_prices, fetch_instrument_info
 from decimal import Decimal
 from django.http import JsonResponse
+from .instrument_service import InstrumentService
 
 @login_required
-def instrument_lookup_api(request, ticker):
+def instrument_lookup_api(
+    request,
+    ticker
+):
 
-    instrument = InvestmentInstrument.objects.filter(
-        ticker_symbol__istartswith=ticker.upper()
-    ).first()
+    # Ambil instrumen dari DB atau provider
+    instrument = (
+        InstrumentService
+        .get_or_create_instrument(
+            ticker
+        )
+    )
 
+    # Jika instrumen tidak ditemukan
     if not instrument:
-
-        data = fetch_instrument_info(ticker)
-
-        if not data:
-            return JsonResponse({
+        return JsonResponse(
+            {
                 "success": False,
-                "message": "Instrumen tidak ditemukan"
-            }, status=404)
-
-        instrument = InvestmentInstrument.objects.create(
-            ticker_symbol=data["ticker"],
-            name=data["name"],
-            instrument_type=data["instrument_type"],
-            current_price=data["current_price"]
+                "message":
+                    "Instrumen tidak ditemukan"
+            },
+            status=404
         )
 
-    return JsonResponse({
-        "success": True,
-        "ticker": instrument.ticker_symbol,
-        "name": instrument.name,
-        "instrument_type": instrument.instrument_type,
-        "current_price": float(instrument.current_price),
-    })
+    # Kirim data instrumen ke frontend
+    return JsonResponse(
+        {
+            "success": True,
+            "ticker":
+                instrument.ticker_symbol,
+            "name":
+                instrument.name,
+            "instrument_type":
+                instrument.instrument_type,
+            "provider":
+                instrument.provider,
+            "current_price":
+                float(
+                    instrument.current_price
+                )
+        }
+    )
 
 class SignUpForm(forms.Form):
     username = forms.CharField(max_length=150, label='Username')
@@ -121,10 +134,20 @@ def dashboard_view(request):
         last_updated__lt=five_minutes_ago
     ).distinct()
     
+    # Perbarui harga instrumen yang sudah lebih dari 5 menit
     for instrument in instruments_to_update:
-        new_price = fetch_current_price(instrument.ticker_symbol)
+
+        # Gunakan provider sesuai jenis aset
+        new_price = fetch_current_price(
+            instrument.ticker_symbol,
+            instrument.provider
+        )
+
         if new_price is not None:
-            instrument.current_price = Decimal(new_price)
+            instrument.current_price = Decimal(
+                new_price
+            )
+
             instrument.save()
             
     # Ambil ulang aset setelah pembaruan harga agar data terhitung akurat
@@ -167,10 +190,25 @@ def add_asset_view(request):
         return redirect('login')
     
     if request.method == 'POST':
+        print("POST DATA:", request.POST)
 
-        ticker_symbol = request.POST.get(
-            'ticker_symbol'
-        ).strip().upper()
+        # Jenis aset dari form
+        asset_type = request.POST.get(
+            "asset_type"
+        )
+
+        # Jika emas gunakan dropdown
+        if asset_type == "Emas":
+
+            ticker_symbol = request.POST.get(
+                "gold_product"
+            ).strip().upper()
+
+        else:
+
+            ticker_symbol = request.POST.get(
+                "ticker_symbol"
+            ).strip().upper()
 
         quantity_str = request.POST.get('quantity')
 
@@ -178,29 +216,24 @@ def add_asset_view(request):
             'average_buy_price'
         )
 
-        instrument = InvestmentInstrument.objects.filter(
-            ticker_symbol__istartswith=ticker_symbol.upper()
-        ).first()
+        # Ambil instrumen dari DB atau provider
+        instrument = (
+            InstrumentService
+            .get_or_create_instrument(
+                ticker_symbol
+            )
+        )
 
+        # Hentikan proses jika instrumen tidak ditemukan
         if not instrument:
-
-            data = fetch_instrument_info(ticker_symbol)
-
-            if not data:
-                return render(
-                    request,
-                    'asset_form.html',
-                    {
-                        'form_type': 'add',
-                        'error_message': 'Instrumen tidak ditemukan'
-                    }
-                )
-
-            instrument = InvestmentInstrument.objects.create(
-                ticker_symbol=data["ticker"],
-                name=data["name"],
-                instrument_type=data["instrument_type"],
-                current_price=data["current_price"]
+            return render(
+                request,
+                'asset_form.html',
+                {
+                    'form_type': 'add',
+                    'error_message':
+                        'Instrumen tidak ditemukan'
+                }
             )
 
         # gunakan data dari database
@@ -220,16 +253,16 @@ def add_asset_view(request):
                     "Jumlah dan harga beli harus lebih dari 0."
                 )
             
-            # Pancing harga live saat pendaftaran pertama kali
-            live_price = fetch_current_price(ticker_symbol)
-            default_price = Decimal(live_price) if live_price is not None else average_buy_price
-            
-            # Jika instrumen sudah ada, kita perbarui datanya
-            if not created:
-                instrument.name = name
-                instrument.instrument_type = instrument_type
-                if live_price is not None:
-                    instrument.current_price = Decimal(live_price)
+            # Ambil harga sesuai provider instrumen
+            live_price = fetch_current_price(
+                ticker_symbol,
+                instrument.provider
+            )
+
+            if live_price is not None:
+                instrument.current_price = Decimal(
+                    live_price
+                )
                 instrument.save()
                 
             # Dapatkan atau buat UserAsset

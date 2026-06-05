@@ -43,86 +43,135 @@ Aset {% else %}Tambah Aset Baru {% endif %} - Asset Management {% endblock %}
       {% endif %}
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Ticker Symbol -->
+        <!-- Asset Type -->
         <div>
           <label
-            for="ticker_symbol"
+            for="asset_type"
             class="block text-sm font-medium text-slate-300"
-            >Ticker / Kode Simbol</label
           >
-          <div class="mt-1">
-            <input
-              type="text"
-              id="ticker_symbol"
-              name="ticker_symbol"
-              required
-              placeholder="Contoh: BBCA, BBRI, BTC"
-              {%
-              if
-              form_type=""
-              ="edit"
-              %}disabled
-              value="{{ asset.instrument.ticker_symbol }}"
-              {%
-              else
-              %}value="{{ ticker_symbol|default:'' }}"
-              {%
-              endif
-              %}
-              class="block w-full rounded-xl bg-slate-900/60 border border-slate-800 px-4 py-3 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
-            />
-          </div>
-          {% if form_type != 'edit' %}
-          <p class="mt-1.5 text-xs text-slate-500">
-            Ketik kode saham atau ticker aset. Contoh: BBCA, BBRI, TLKM, BTC
-          </p>
-          {% endif %}
+            Jenis Aset
+          </label>
+
+          <select
+            id="asset_type"
+            name="asset_type"
+            class="mt-1 block w-full rounded-xl bg-slate-900/60 border border-slate-800 px-4 py-3 text-slate-200"
+          >
+            <option value="Saham">Saham</option>
+            <option value="Crypto">Crypto</option>
+            <option value="Emas">Emas</option>
+          </select>
         </div>
 
-        <!-- Instrument Type -->
-        <div>
-          <label
-            for="instrument_type"
-            class="block text-sm font-medium text-slate-300"
-            >Tipe Instrumen</label
-          >
-          <div class="mt-1">
-            <input
-              type="text"
-              id="instrument_type"
-              name="instrument_type"
-              readonly
-              class="block w-full rounded-xl bg-slate-900/60 border border-slate-800 px-4 py-3 text-slate-200 focus:outline-none"
-            />
+        <!-- Crypto & Saham section -->
+        <div
+          id="instrument-section"
+          class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6"
+        >
+          <!-- Ticker Symbol -->
+          <div>
+            <label
+              for="ticker_symbol"
+              class="block text-sm font-medium text-slate-300"
+              id="ticker-label"
+              >Ticker / Kode Simbol</label
+            >
+            <div class="mt-1">
+              <input
+                type="text"
+                id="ticker_symbol"
+                name="ticker_symbol"
+                required
+                placeholder="Contoh: BBCA, BBRI, BTC"
+                {%
+                if
+                form_type=""
+                ="edit"
+                %}disabled
+                value="{{ asset.instrument.ticker_symbol }}"
+                {%
+                else
+                %}value="{{ ticker_symbol|default:'' }}"
+                {%
+                endif
+                %}
+                class="block w-full rounded-xl bg-slate-900/60 border border-slate-800 px-4 py-3 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            </div>
+            {% if form_type != 'edit' %}
+            <p class="mt-1.5 text-xs text-slate-500" id="ticker-helper">
+              Ketik kode saham atau ticker aset...
+            </p>
+            {% endif %}
+          </div>
+
+          <!-- Instrument Type -->
+          <div>
+            <label
+              for="instrument_type"
+              class="block text-sm font-medium text-slate-300"
+              >Tipe Instrumen</label
+            >
+            <div class="mt-1">
+              <input
+                type="text"
+                id="instrument_type"
+                name="instrument_type"
+                readonly
+                class="block w-full rounded-xl bg-slate-900/60 border border-slate-800 px-4 py-3 text-slate-200 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <!-- Instrument Name -->
+          <div class="md:col-span-2">
+            <label for="name" class="block text-sm font-medium text-slate-300"
+              >Nama Lengkap Instrumen</label
+            >
+            <div class="mt-1">
+              <input
+                type="text"
+                id="name"
+                name="name"
+                required
+                readonly
+                {%
+                if
+                form_type=""
+                ="edit"
+                %}disabled
+                value="{{ asset.instrument.name }}"
+                {%
+                else
+                %}value="{{ name|default:'' }}"
+                {%
+                endif
+                %}
+                class="block w-full rounded-xl bg-slate-900/60 border border-slate-800 px-4 py-3 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            </div>
           </div>
         </div>
 
-        <!-- Instrument Name -->
-        <div class="md:col-span-2">
-          <label for="name" class="block text-sm font-medium text-slate-300"
-            >Nama Lengkap Instrumen</label
-          >
-          <div class="mt-1">
-            <input
-              type="text"
-              id="name"
-              name="name"
-              required
-              readonly
-              {%
-              if
-              form_type=""
-              ="edit"
-              %}disabled
-              value="{{ asset.instrument.name }}"
-              {%
-              else
-              %}value="{{ name|default:'' }}"
-              {%
-              endif
-              %}
-              class="block w-full rounded-xl bg-slate-900/60 border border-slate-800 px-4 py-3 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
-            />
+        <!-- Gold section -->
+        <div id="gold-section" class="hidden">
+          <div>
+            <label
+              for="gold_product"
+              class="block text-sm font-medium text-slate-300"
+            >
+              Produk Emas
+            </label>
+
+            <select
+              id="gold_product"
+              name="gold_product"
+              class="mt-1 block w-full rounded-xl bg-slate-900/60 border border-slate-800 px-4 py-3 text-slate-200"
+            >
+              <option value="ANTAM">ANTAM</option>
+
+              <option value="UBS">UBS</option>
+            </select>
           </div>
         </div>
 
@@ -204,13 +253,11 @@ Aset {% else %}Tambah Aset Baru {% endif %} - Asset Management {% endblock %}
 </div>
 
 <script>
+  const tickerInput = document.getElementById("ticker_symbol");
+  const nameInput = document.getElementById("name");
+  const typeInput = document.getElementById("instrument_type");
+
   document.addEventListener("DOMContentLoaded", () => {
-    const tickerInput = document.getElementById("ticker_symbol");
-
-    const nameInput = document.getElementById("name");
-
-    const typeInput = document.getElementById("instrument_type");
-
     tickerInput.addEventListener("blur", async () => {
       const ticker = tickerInput.value.trim();
 
@@ -235,6 +282,80 @@ Aset {% else %}Tambah Aset Baru {% endif %} - Asset Management {% endblock %}
       }
     });
   });
+
+  const assetTypeSelect = document.getElementById("asset_type");
+  const instrumentSection = document.getElementById("instrument-section");
+  const goldSection = document.getElementById("gold-section");
+  const quantityLabel = document.getElementById("quantity-label");
+  const quantityHelper = document.getElementById("quantity-helper");
+  const tickerLabel = document.getElementById("ticker-label");
+  const tickerHelper = document.getElementById("ticker-helper");
+
+  function updateAssetForm() {
+    switch (assetTypeSelect.value) {
+      case "Saham":
+        instrumentSection.classList.remove("hidden");
+
+        goldSection.classList.add("hidden");
+
+        tickerInput.required = true;
+        nameInput.required = true;
+
+        tickerLabel.textContent = "Ticker Saham";
+
+        tickerInput.placeholder = "Contoh: BBCA, BBRI, TLKM";
+
+        tickerHelper.textContent = "Masukkan kode saham BEI";
+
+        quantityLabel.textContent = "Jumlah Lot";
+
+        quantityHelper.textContent = "1 lot = 100 lembar saham";
+
+        break;
+
+      case "Crypto":
+        instrumentSection.classList.remove("hidden");
+
+        goldSection.classList.add("hidden");
+
+        tickerInput.required = true;
+        nameInput.required = true;
+
+        tickerLabel.textContent = "Symbol Crypto";
+
+        tickerInput.placeholder = "Contoh: BTC, ETH, SOL";
+
+        tickerHelper.textContent = "Masukkan symbol crypto";
+
+        quantityLabel.textContent = "Jumlah Coin";
+
+        quantityHelper.textContent = "Contoh: 0.25 BTC";
+
+        typeInput.value = "Crypto";
+
+        break;
+
+      case "Emas":
+        instrumentSection.classList.add("hidden");
+
+        goldSection.classList.remove("hidden");
+
+        tickerInput.required = false;
+        nameInput.required = false;
+
+        quantityLabel.textContent = "Jumlah Gram";
+
+        quantityHelper.textContent = "Contoh: 2.5 gram";
+
+        typeInput.value = "Emas";
+
+        break;
+    }
+  }
+
+  assetTypeSelect.addEventListener("change", updateAssetForm);
+
+  updateAssetForm();
 </script>
 
 {% endblock %}

@@ -219,7 +219,7 @@ Portofolio - Asset Management {% endblock %} {% block content %}
               </span>
             </td>
             <td class="px-6 py-4 text-right text-slate-300 font-mono">
-              {{ asset.display_quantity }}
+              {{asset.display_quantity}} {{asset.instrument.unit_label }}
             </td>
             <td class="px-6 py-4 text-right text-slate-300 font-mono">
               {{ asset.average_buy_price|rupiah}}
