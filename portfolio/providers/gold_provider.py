@@ -1,3 +1,11 @@
+from .gold_api_provider import (
+    GoldApiProvider
+)
+
+from .gold_scraper import (
+    GoldScraper
+)
+
 class GoldProvider:
 
     GOLD_PRODUCTS = {
@@ -28,23 +36,36 @@ class GoldProvider:
             "provider": "SCRAPER",
             "current_price": 0,
         }
-
     
     @classmethod
     def get_current_price(
         cls,
         symbol
     ):
-        """
-        Harga emas sementara.
-        Nanti akan diganti dengan scraper Antam/UBS.
-        """
 
-        data = cls.get_instrument_info(
-            symbol
+        symbol = symbol.upper()
+
+        # Primary source:
+        # Indogold API (ANTAM & UBS)
+        price = (
+            GoldApiProvider
+            .get_current_price(
+                symbol
+            )
         )
 
-        if not data:
-            return None
+        if price:
+            return price
 
-        return data["current_price"]
+        # Fallback source : Scraper Logam Mulia resmi (Jika Primary tidak tersedia)
+        # ToDo:
+        # Tambahkan UBS scraper dari ubslifestyle.com
+        # sebagai fallback jika API Indogold gagal.
+        if symbol == "ANTAM":
+
+            return (
+                GoldScraper
+                .get_antam_price()
+            )
+
+        return None
